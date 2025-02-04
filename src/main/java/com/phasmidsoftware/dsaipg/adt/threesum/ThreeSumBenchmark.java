@@ -4,13 +4,12 @@
 
 package com.phasmidsoftware.dsaipg.adt.threesum;
 
-import com.phasmidsoftware.dsaipg.util.Benchmark_Timer;
-import com.phasmidsoftware.dsaipg.util.TimeLogger;
-import com.phasmidsoftware.dsaipg.util.Utilities;
-
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
+
+import com.phasmidsoftware.dsaipg.util.Stopwatch;
+import com.phasmidsoftware.dsaipg.util.TimeLogger;
+import com.phasmidsoftware.dsaipg.util.Utilities;
 
 /**
  * The ThreeSumBenchmark class provides a framework for evaluating and comparing
@@ -102,8 +101,22 @@ public class ThreeSumBenchmark {
      */
     private void benchmarkThreeSum(final String description, final Consumer<int[]> function, int n, final TimeLogger[] timeLoggers) {
         if (description.equals("ThreeSumCubic") && n > 4000) return;
-        // TO BE IMPLEMENTED 
-throw new RuntimeException("implementation missing");
+        int[] inputArray = supplier.get();
+        System.out.println(description);
+        System.out.println("Generated input array size : " + inputArray.length);
+        long totalExecutionTime = 0;
+        for (int i = 0; i < runs; i++) {
+            try (Stopwatch stopwatch = new Stopwatch()) {
+                function.accept(inputArray);
+                long elapsedTimeInMillis = stopwatch.lap(); 
+                totalExecutionTime += elapsedTimeInMillis;
+            } catch (Exception e) {
+                e.printStackTrace(); 
+            }
+        }
+        double averageElapsedTime = totalExecutionTime / (double) runs;
+        System.out.println("Average elapsed time over " + runs + " runs: " + averageElapsedTime + " ms");
+        timeLoggers[0].log("Average raw time per run (mSec): ", (long) averageElapsedTime, n);
     }
 
     /**
