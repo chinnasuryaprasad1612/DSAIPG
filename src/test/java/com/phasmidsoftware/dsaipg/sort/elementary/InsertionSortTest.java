@@ -5,15 +5,14 @@
 package com.phasmidsoftware.dsaipg.sort.elementary;
 
 import com.phasmidsoftware.dsaipg.sort.*;
-import com.phasmidsoftware.dsaipg.util.Config;
-import com.phasmidsoftware.dsaipg.util.LazyLogger;
-import com.phasmidsoftware.dsaipg.util.PrivateMethodTester;
-import com.phasmidsoftware.dsaipg.util.StatPack;
+import com.phasmidsoftware.dsaipg.util.*;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.function.Supplier;
 
 import static com.phasmidsoftware.dsaipg.sort.Instrument.*;
 import static com.phasmidsoftware.dsaipg.util.ConfigTest.INVERSIONS;
@@ -266,5 +265,61 @@ public class InsertionSortTest {
     }
 
     final static LazyLogger logger = new LazyLogger(InsertionSort.class);
+
+    @Test
+    public void sortingTimer() {
+        int[] arraySize = {250, 500, 1000, 2000, 4000};
+        String[] orders = {"random", "ordered", "partially-ordered", "reverse-ordered"};
+        final Config config = setupConfig("true", "true", "0", "1", "", "");
+
+        for (int n : arraySize) {
+            System.out.println("Benchmark for size n = " + n);
+            for (String order : orders) {
+                Supplier<Integer[]> arraySupplier = () -> generateArray(n, order);
+                InsertionSort<Integer> sorter = new InsertionSort<>("Insertion Sort", n,20, config);
+                Benchmark_Timer<Integer[]> benchmark = new Benchmark_Timer<>("Sorting Benchmark", sorter::sort);
+                new Timer().repeat(10, true, arraySupplier, sorter::sort, null, null);
+                double averageTime = benchmark.runFromSupplier(arraySupplier, 20);
+                System.out.println("Type of Ordering: " + order + ", Average Execution Time: " + averageTime + " milliseconds");
+            }
+            System.out.println();
+        }
+    }
+
+    private static Integer[] generateArray(int n, String order) {
+        Integer[] arr = new Integer[n];
+        Random random = new Random();
+
+        switch (order) {
+            case "random":
+                for (int i = 0; i < n; i++) {
+                    arr[i] = random.nextInt();
+                }
+                break;
+            case "ordered":
+                for (int i = 0; i < n; i++) {
+                    arr[i] = i;
+                }
+                break;
+            case "partially-ordered":
+                for (int i = 0; i < n; i++) {
+                    arr[i] = i + random.nextInt(100);
+                }
+                break;
+            case "reverse-ordered":
+                for (int i = 0; i < n; i++) {
+                    arr[i] = n - i;
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid order type");
+        }
+
+        return arr;
+    }
+
+
+
+
 
 }
