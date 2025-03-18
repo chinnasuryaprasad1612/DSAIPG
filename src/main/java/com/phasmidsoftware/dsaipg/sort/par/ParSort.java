@@ -40,15 +40,16 @@ final class ParSort {
      */
     public static void sort(int[] array, int from, int to) {
         if (to - from >= cutoff) {
-            CompletableFuture<int[]> completableFuture1 = null;
-            CompletableFuture<int[]> completableFuture2 = null;
-            // TO BE IMPLEMENTED 
-            // END SOLUTION
+            int mid = (from + to) / 2;
+            CompletableFuture<int[]> completableFuture1 = asyncSort(array, from, mid);
+            CompletableFuture<int[]> completableFuture2 = asyncSort(array, mid, to);
+
             CompletableFuture<int[]> completableFuture = completableFuture1.thenCombine(completableFuture2, ParSort::doMerge);
             completableFuture.whenComplete((result, throwable) -> System.arraycopy(result, 0, array, from, result.length));
             completableFuture.join();
-        } else
+        } else {
             Arrays.sort(array, from, to);
+        }
     }
 
     /**
@@ -61,11 +62,37 @@ final class ParSort {
      * @param to    the ending index (exclusive) of the portion of the array to be sorted
      * @return a new sorted array containing the elements from the specified range of the input array
      */
-    static int[] sortRecursive(int[] array, int from, int to) {
+    private static int[] sortRecursive(int[] array, int from, int to) {
+
         int[] result = new int[to - from];
-        // TO BE IMPLEMENTED 
-         // NOTE you need to do something here so that result is the sorted version of array.
-        // END SOLUTION
+        // TO BE IMPLEMENTED
+        if (to - from <= cutoff) {
+            int[] sorted = Arrays.copyOfRange(array, from, to);
+            Arrays.sort(sorted);
+            System.arraycopy(sorted, 0, result, 0, sorted.length);
+        } else {
+            int mid = from + (to - from) / 2;
+
+            CompletableFuture<int[]> left = asyncSort(array, from, mid);
+            CompletableFuture<int[]> right = asyncSort(array, mid, to);
+
+            int[] merged = left.thenCombine(right, (leftArr, rightArr) -> {
+                int[] mergeArr = new int[leftArr.length + rightArr.length];
+                int i = 0, j = 0, k = 0;
+                while (i < leftArr.length && j < rightArr.length) {
+                    if (leftArr[i] <= rightArr[j]) {
+                        mergeArr[k++] = leftArr[i++];
+                    } else {
+                        mergeArr[k++] = rightArr[j++];
+                    }
+                }
+                while (i < leftArr.length) mergeArr[k++] = leftArr[i++];
+                while (j < rightArr.length) mergeArr[k++] = rightArr[j++];
+                return mergeArr;
+            }).join();
+
+            System.arraycopy(merged, 0, result, 0, merged.length);
+        }
         return result;
     }
 
