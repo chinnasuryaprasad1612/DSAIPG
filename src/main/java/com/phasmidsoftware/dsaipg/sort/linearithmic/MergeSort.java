@@ -67,18 +67,54 @@ public class MergeSort<X extends Comparable<X>> extends SortWithComparableHelper
         @SuppressWarnings("unchecked") X[] aux = noCopy ? helper.copyArray(a) : (X[]) new Comparable[a.length];
         sort(a, aux, from, to);
     }
-
     private void sort(X[] a, X[] aux, int from, int to) {
         Config config = helper.getConfig();
         boolean insurance = config.getBoolean(MERGESORT, INSURANCE);
         boolean noCopy = config.getBoolean(MERGESORT, NOCOPY);
-        if (to <= from + helper.cutoff()) { // XXX check that a cutoff value of 1 effectively stops the cutoff mechanism.
+
+        if (to <= from + helper.cutoff()) {
             insertionSort.sort(a, from, to);
             return;
         }
+        int mid = from + (to - from) / 2;
 
-        // TO BE IMPLEMENTED  : implement merge sort with insurance and no-copy optimizations
-throw new RuntimeException("implementation missing");
+        if (noCopy) {
+
+            sort(aux, a, from, mid);
+            sort(aux, a, mid, to);
+
+            // Insurance optimization: if the two halves are already in order, simply copy
+            if (insurance && !helper.less(a[mid], a[mid - 1])) {
+                for (int i = from; i < to; i++) {
+                    helper.copy(a[i], aux, i);
+                }
+                return;
+            }
+
+            // Merge sorted halves from 'a' into 'aux'
+            merge(a, aux, from, mid, to);
+
+            // Final copy from aux → a, only at top level
+            if (from == 0 && to == a.length) {
+                for (int i = from; i < to; i++) {
+                    helper.copy(aux[i], a, i);
+                }
+            }
+
+        } else {
+
+            sort(a, aux, from, mid);
+            sort(a, aux, mid, to);
+
+            if (insurance && !helper.less(a[mid], a[mid - 1])) {
+                return;
+            }
+
+            merge(a, aux, from, mid, to);
+            for (int i = from; i < to; i++) {
+                helper.copy(aux[i], a, i); // ✅ must be counted
+            }
+        }
     }
 
     // CONSIDER combine with MergeSortBasic, perhaps.
